@@ -1,5 +1,7 @@
 package com.xiyuan.util;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
 /**
@@ -25,20 +27,21 @@ public class Md5Util {
     }
 
     public static String get(String origin) {
-        return get(origin, "utf-8");
+        return get(origin, StandardCharsets.UTF_8);
     }
 
-    public static String get(String origin, String charsetname) {
+    public static String get(String origin, Charset charsets) {
+        if (charsets == null) {
+            return get(origin.getBytes());
+        }
+        else return get(origin.getBytes(charsets));
+    }
+
+    public static String get(byte[] origin) {
         String resultString = null;
         try {
-            resultString = origin;
             MessageDigest md = MessageDigest.getInstance("MD5");
-            if (charsetname == null || "".equals(charsetname))
-                resultString = byteArrayToHexString(md.digest(resultString
-                        .getBytes()));
-            else
-                resultString = byteArrayToHexString(md.digest(resultString
-                        .getBytes(charsetname)));
+            resultString = byteArrayToHexString(md.digest(origin));
         } catch (Exception e) {
             e.printStackTrace();
         }
