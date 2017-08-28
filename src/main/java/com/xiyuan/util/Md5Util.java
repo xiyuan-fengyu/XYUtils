@@ -64,21 +64,29 @@ public class Md5Util {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        finally {
-            try {
-                in.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
         return resultString;
     }
 
     private static void updateDigest(MessageDigest md, InputStream in) throws IOException {
         byte[] buffer = new byte[2048];
         int len;
-        while ((len = in.read(buffer)) != -1) {
-            md.update(buffer, 0, len);
+        try {
+            while ((len = in.read(buffer)) != -1) {
+                md.update(buffer, 0, len);
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+        finally {
+            if (in != null) {
+                try {
+                    in.close();
+                }
+                catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
