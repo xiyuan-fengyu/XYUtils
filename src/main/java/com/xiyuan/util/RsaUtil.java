@@ -7,15 +7,11 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
-import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
@@ -70,29 +66,60 @@ public class RsaUtil {
         }
     }
 
-    public static RSAPublicKey loadPublicKey(String keyPath) {
-        try (FileInputStream in = new FileInputStream(new File(keyPath))) {
-            byte[] bytes = new byte[in.available()];
-            in.read(bytes);
-            X509EncodedKeySpec x509 = new X509EncodedKeySpec(Base64.decodeBase64(bytes));
-            return (RSAPublicKey) rsaKeyFactory.generatePublic(x509);
-        } catch (IOException | InvalidKeySpecException e) {
+    public static RSAPublicKey loadPublicKey(InputStream in) throws Exception {
+        byte[] bytes = new byte[in.available()];
+        in.read(bytes);
+        X509EncodedKeySpec x509 = new X509EncodedKeySpec(Base64.decodeBase64(bytes));
+        return (RSAPublicKey) rsaKeyFactory.generatePublic(x509);
+    }
+
+    public static RSAPublicKey loadPublicKeyFromFile(String keyPath) {
+        try (FileInputStream in = new FileInputStream(keyPath)) {
+            return loadPublicKey(in);
+        }
+        catch (Exception e) {
             e.printStackTrace();
         }
         return null;
     }
 
-    public static RSAPrivateKey loadPrivateKey(String keyPath) {
-        try (FileInputStream in = new FileInputStream(new File(keyPath))) {
-            byte[] bytes = new byte[in.available()];
-            in.read(bytes);
-            PKCS8EncodedKeySpec pkcs8 = new PKCS8EncodedKeySpec(Base64.decodeBase64(bytes));
-            return (RSAPrivateKey) rsaKeyFactory.generatePrivate(pkcs8);
-        } catch (IOException | InvalidKeySpecException e) {
+    public static RSAPublicKey loadPublicKeyFromRes(String keyRes) {
+        try (InputStream in = RsaUtil.class.getClassLoader().getResourceAsStream(keyRes)) {
+            return loadPublicKey(in);
+        }
+        catch (Exception e) {
             e.printStackTrace();
         }
         return null;
     }
+
+    public static RSAPrivateKey loadPrivateKey(InputStream in) throws Exception {
+        byte[] bytes = new byte[in.available()];
+        in.read(bytes);
+        PKCS8EncodedKeySpec pkcs8 = new PKCS8EncodedKeySpec(Base64.decodeBase64(bytes));
+        return (RSAPrivateKey) rsaKeyFactory.generatePrivate(pkcs8);
+    }
+
+    public static RSAPrivateKey loadPrivateKeyFromFile(String keyPath) {
+        try (FileInputStream in = new FileInputStream(keyPath)) {
+            return loadPrivateKey(in);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static RSAPrivateKey loadPrivateKeyFromRes(String keyRes) {
+        try (InputStream in = RsaUtil.class.getClassLoader().getResourceAsStream(keyRes)) {
+            return loadPrivateKey(in);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
 
     public static byte[] encrypt(byte[] source, RSAPublicKey key) {
         try {
@@ -137,18 +164,21 @@ public class RsaUtil {
     }
 
     public static void main(String[] args) {
-//        createAndSave("./target", "test");
-        RSAPrivateKey privateKey = loadPrivateKey("./target/test_private.key");
-        RSAPublicKey publicKey = loadPublicKey("./target/test_public.key");
-//        String str = "nGGJDZNHMZrItYlfnd9NZNYiXQwGF356428bPM/R5X/ugtQeiSiQKh4p3Tach5KK/19bwu3BDpG6UJd4SLip6rnIVTgi20fE8AaZUWosMaTuauDoLiUvN98aPT684JuQlO4B/h1O9+F32PqlIer2N9KertPkhKi/uo48nOenWa8=";
-        String str = "123";
-        String encryptedStr = encryptToBase64(str, publicKey);
-        System.out.println(encryptedStr);
-        System.out.println(decryptFromBase64(encryptedStr, privateKey));
+        RSAPrivateKey privateKey;
+        RSAPublicKey publicKey;
+        while (true) {
+            privateKey = loadPrivateKeyFromFile("src/main/resources/test_private.key");
+            publicKey = loadPublicKeyFromFile("src/main/resources/test_public.key");
+            if (privateKey == null || publicKey == null) {
+                createAndSave("src/main/resources", "test");
+            }
+            else break;
+        }
 
-//        RSAPrivateKey privateKey = loadPrivateKey("./target/test_private.key");
-//        String str = "CbwW37/erjc0x7fcGWp9uJVyLl/TamFoBPoV2l7fhIbRULDmpI1aIUZz6SpNIvsBkLMspl4ojaQgSNEDDymZqThH/9BPdqsmLHIBf7609NP94ykx/w4hBtTFrcbe2JS0AZc8PeoyIooHZXcEpS9I/ivgltjJkOq9nYDdrdoWnkA=";
-//        System.out.println(decryptFromBase64(str, privateKey));
+        String str = "123";
+        String encStr = encryptToBase64(str, publicKey);
+        System.out.println(encStr);
+        System.out.println(decryptFromBase64(encStr, privateKey));
     }
 
 }
